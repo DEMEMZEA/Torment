@@ -6,10 +6,12 @@
 #include <dpp/dpp.h>
 #include <dpp/message.h>
 #include <dpp/snowflake.h>
+#include <future>
 #include <unordered_map>
 using namespace std;
 
 const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
+constinit long long int a{3};
 
 std::string to_lower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
@@ -19,10 +21,20 @@ std::string to_lower(std::string s) {
 
 unordered_map<dpp::snowflake, dpp::snowflake>Cooldown;
 
-void jorkle(const dpp::message_create_t& event, const dpp::cluster* bot){
-if(event.msg.message_reference.message_id==0) return; // must be a reply
+
+
+void jorkle(const dpp::message_create_t& event, dpp::cluster* bot){
+if(event.msg.message_reference.message_id==0)return;
 dpp::snowflake jorkler_id = event.msg.author.id;
-}
+dpp::snowflake jorkled_id;
+bot->message_get(event.msg.id,event.msg.channel_id,[&bot,&jorkled_id]
+    (const dpp::confirmation_callback_t& cb) {
+    if (cb.is_error()) return;
+    const dpp::message& original = std::get<dpp::message>(cb.value);
+    jorkled_id=original.author.id;
+
+
+});}
 
 int main(){
 
