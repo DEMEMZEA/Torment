@@ -1,4 +1,4 @@
-#include "jorkle.hpp"
+#include "../hpp/jorkle.hpp"
 
 namespace jorkle_info {
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, dpp::snowflake>>cooldowns_per_server;
