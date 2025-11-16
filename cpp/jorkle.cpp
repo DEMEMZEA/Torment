@@ -13,7 +13,7 @@ std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, std::pair<
 std::unordered_map<dpp::snowflake, std::pair<int,int>> extra_global_dice; // attack and defense, in that order
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_servers;
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_users;
-constinit long long int cooldown{(24*60*60*1000*1)<<12};
+constinit unsigned long long int cooldown{(24*60*60*1000*1)<<12};
 }
 using namespace jorkle_info;
 constexpr int IS_NOT_A_REPLY{1001},COOLDOWN_IS_NOT_OVER{1002},JORKLE_IS_DISABLED_SERVER{1003},JORKLE_IS_DISABLED_JORKLER{1004},JORKLE_IS_DISABLED_JORKLED{1005};
