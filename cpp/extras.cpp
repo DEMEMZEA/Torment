@@ -1,7 +1,8 @@
 #include "../hpp/extras.hpp"
 
 std::string to_time(long long int time){
-if(time<=0) throw std::invalid_argument("time amount must be positive");;
+if(time==0) throw std::invalid_argument("time amount must be nonnull");
+if(time<0) return (to_time(-time)+" ago");
 std::string resp;
 int ms = static_cast<int>(time%1000);
 time/=1000;
