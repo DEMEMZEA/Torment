@@ -2,21 +2,23 @@
 #include "../hpp/extras.hpp"
 #include <ctime>
 #include <dpp/message.h>
+#include <dpp/restresults.h>
 #include <dpp/snowflake.h>
 #include <string>
 #include <unordered_map>
 
 namespace jorkle_info {
-std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, dpp::snowflake>>cooldowns_per_server;
+std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, double>>cooldowns_per_server;
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, double>>server_points;
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, std::pair<int,int>>>extra_server_dice; // attack and defense, in that order
 std::unordered_map<dpp::snowflake, std::pair<int,int>> extra_global_dice; // attack and defense, in that order
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_servers;
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_users;
-constinit unsigned long long int cooldown{(24*60*60*1000*1)<<12};
+std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, bool>> disabled_jorkle_per_server;
+constinit double cooldown{(24*60*60)};
 }
 using namespace jorkle_info;
-constexpr int IS_NOT_A_REPLY{1001},COOLDOWN_IS_NOT_OVER{1002},JORKLE_IS_DISABLED_SERVER{1003},JORKLE_IS_DISABLED_JORKLER{1004},JORKLE_IS_DISABLED_JORKLED{1005};
+constexpr int IS_NOT_A_REPLY{1001},COOLDOWN_IS_NOT_OVER{1002},JORKLE_IS_DISABLED_SERVER{1003},JORKLE_IS_DISABLED_JORKLER_SERVERSIDE{1004},JORKLE_IS_DISABLED_JORKLER_GLOBAL{1005},JORKLE_IS_DISABLED_JORKLED_SERVERSIDE{1006},JORKLE_IS_DISABLED_JORKLED_GLOBAL{1007};
 constexpr int UNDEFINED_CASE{1000};
 
 void cant_jorkle(const dpp::message_create_t& event, int reason=1000){
@@ -24,23 +26,31 @@ dpp::message msg{};
 switch (reason) {
 case IS_NOT_A_REPLY:
 msg.set_flags(dpp::m_ephemeral);
-msg.set_content("Sorry, your message must be a reply for a jorkle to work");
+msg.set_content("Sorry, your message must be a reply for a Jorkle to work");
 event.reply(msg,true);
 break;
 case COOLDOWN_IS_NOT_OVER:
-msg.set_content("You're still on cooldown, wait "+to_time(static_cast<long long int>(cooldowns_per_server[event.msg.guild_id][event.msg.author.id]-event.msg.id)<<12)+" to jorkle someone");
+msg.set_content("You're still on cooldown, wait "+to_time(1000.0*(cooldowns_per_server[event.msg.guild_id][event.msg.author.id]-event.msg.id.get_creation_time()+cooldown))+" to jorkle someone");
 event.reply(msg,true);
 break;
 case JORKLE_IS_DISABLED_SERVER:
-msg.set_content("Sorry, the \"Jorkle\" function is disabled on this server.");
+msg.set_content("Sorry, the Jorkle function is disabled on this server.");
 event.reply(msg,true);
 break;
-case JORKLE_IS_DISABLED_JORKLER:
-msg.set_content("My dear, you have the Jorkle function disabled for yourself ");
+case JORKLE_IS_DISABLED_JORKLER_SERVERSIDE:
+msg.set_content("My dear, you have the Jorkle function disabled for yourself on this server");
 event.reply(msg,true);
 break;
-case JORKLE_IS_DISABLED_JORKLED:
-msg.set_content("Sorry, the user you tried to jorkle has disabled their Jorkle");
+case JORKLE_IS_DISABLED_JORKLER_GLOBAL:
+msg.set_content("My dear, you have the Jorkle function disabled for yourself");
+event.reply(msg,true);
+break;
+case JORKLE_IS_DISABLED_JORKLED_SERVERSIDE:
+msg.set_content("Sorry, the user you tried to Jorkle has disabled their Jorkle on this server");
+event.reply(msg,true);
+break;
+case JORKLE_IS_DISABLED_JORKLED_GLOBAL:
+msg.set_content("Sorry, the user you tried to Jorkle has disabled their Jorkle");
 event.reply(msg,true);
 break;
 case UNDEFINED_CASE:
@@ -58,26 +68,28 @@ if(event.msg.message_reference.message_id==0){
 cant_jorkle(event, IS_NOT_A_REPLY);
 co_return;
 } // make sure it is a reply
-dpp::snowflake sent_on = event.msg.id;
+double sent_on = event.msg.id.get_creation_time();
 dpp::snowflake server_id = event.msg.guild_id;
 dpp::snowflake jorkler_id = event.msg.author.id;
 dpp::guild_member jorkler = event.msg.member;
-auto msg = co_await bot.co_message_get(event.msg.id,event.msg.channel_id);
+auto msg = co_await bot.co_message_get(event.msg.message_reference.message_id,event.msg.message_reference.channel_id);
 dpp::message message = std::get<dpp::message>(msg.value);
 dpp::snowflake jorkled_id=message.author.id;
 auto usr = co_await bot.co_guild_get_member(event.msg.guild_id,jorkled_id);
 dpp::guild_member jorkled = std::get<dpp::guild_member>(usr.value);
+
+
 
 if(disabled_jorkle_servers[server_id]){
 cant_jorkle(event,JORKLE_IS_DISABLED_SERVER);
 co_return;
 }
 if(disabled_jorkle_users[jorkler_id]){
-cant_jorkle(event,JORKLE_IS_DISABLED_JORKLER);
+cant_jorkle(event,JORKLE_IS_DISABLED_JORKLER_SERVERSIDE);
 co_return;
 }
 if(disabled_jorkle_users[jorkled_id]){
-cant_jorkle(event,JORKLE_IS_DISABLED_JORKLED);
+cant_jorkle(event,JORKLE_IS_DISABLED_JORKLED_SERVERSIDE);
 co_return;
 }
 
@@ -141,7 +153,7 @@ time_t latest;
 latest = time(nullptr);
 if(jorkler.communication_disabled_until>latest) latest = jorkler.communication_disabled_until;
 co_await bot.co_guild_member_timeout(server_id, jorkler_id, latest+600);
-cooldowns_per_server[server_id][jorkler_id]=sent_on;
+cooldowns_per_server[server_id][jorkler_id]=event.msg.id.get_creation_time();
 }
 
 }
