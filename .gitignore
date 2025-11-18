@@ -4,3 +4,4 @@
 .vscode/*
 obj/
 data/*.json
+!makefile
