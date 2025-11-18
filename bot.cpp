@@ -2,11 +2,20 @@
 #include <dpp/appcommand.h>
 #include <dpp/dpp.h>
 #include <dpp/once.h>
+#include <dpp/permissions.h>
+#include <dpp/snowflake.h>
+#include <vector>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
+#include "hpp/extras.hpp"
 using namespace std;
 
 const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
+const std::unordered_map<dpp::snowflake,int> bot_superusers{
+{dpp::snowflake(480714970548404224),5},
+
+};
+
 
 std::string to_lower(std::string s) {
 std::transform(s.begin(), s.end(), s.begin(),
@@ -60,17 +69,21 @@ auto guildlist = co_await bot.co_current_user_get_guilds();
 std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_map<dpp::snowflake, dpp::guild>>(guildlist.value);
 
 std::vector<dpp::slashcommand> global_commands{boa,jorkle_toggle};
+std::vector<std::vector<dpp::slashcommand>> global_admin_commands{{},{},{},{},{}};
 std::vector<dpp::slashcommand> server_commands{};
 std::vector<dpp::slashcommand> server_admin_commands{};
 
 //adding all commands
 
 bot.global_bulk_command_create(global_commands);
+for(auto command: global_commands){
+command.set_default_permissions(0);
+}
 for(auto[id,guild]:guilds){
 bot.guild_bulk_command_create(server_commands,id);
 bot.guild_bulk_command_create(server_admin_commands,id);
 for (auto command: server_admin_commands){
-command.set_default_permissions(0);
+command.set_default_permissions(dpp::permissions::p_administrator);
 
 }
 
@@ -94,7 +107,7 @@ else co_await jorkle(event,bot,0);
 co_return;
 });
 
-bot.on_slashcommand([](const dpp::slashcommand_t& event){
+bot.on_slashcommand([&bot](const dpp::slashcommand_t& event)-> dpp::task<void> {
 
 if(event.command.get_command_name()=="boa"){
 int pct = get<int64_t>(event.get_parameter("percentage"));
@@ -115,11 +128,54 @@ if(ephem) msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
 
-if(event.command.get_command_name()=="jorkleGuild"){
-bool enabled = get<bool>(event.get_parameter("state"));
-jorkle_info::disabled_jorkle_servers[event.command.guild_id]=enabled;
+if(event.command.get_command_name()=="jorkle"){
+dpp::message msg;
+bool dm = event.command.get_channel().is_dm();
+std::string subcommand = std::get<std::string>(event.get_parameter("command")); 
+bool state = !std::get<bool>(event.get_parameter("state"));
+if(subcommand=="server"){
+if(dm){
+msg.content="Sorry, this subcommand must be executed on a server you're admin";
+event.reply(msg);
+co_return;
+}
+dpp::permission perms = event.command.get_resolved_permission(event.command.member.user_id);
+if(perms & dpp::p_administrator){
+jorkle_info::disabled_jorkle_servers[event.command.member.guild_id]=state;
+msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " on this server";
+event.reply(msg);
+}
+else{
+msg.content="Sorry, you must be have the \"Administrator\" Permission to execute the command on this server";
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+}
+}
+if(subcommand=="self"){
+msg.set_flags(dpp::m_ephemeral);
+msg.content="";
+std::string scope = std::get<std::string>(event.get_parameter("scope"));
+if(scope=="general"){
+jorkle_info::disabled_jorkle_users[event.command.member.user_id]=state;
+msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " for you";
+if(!dm) msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+}
+if(scope=="server"){
+if(dm){
+msg.content="Sorry, there is no server for this scope to act on";
+event.reply(msg);
+co_return;
+}
+jorkle_info::disabled_jorkle_per_server[event.command.member.guild_id][event.command.member.user_id]=state;
+msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " for you on this server!";
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
 }
 
+}
+}
+co_return;
 });
 
 bot.start(dpp::st_wait);

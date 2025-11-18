@@ -25,7 +25,6 @@ void cant_jorkle(const dpp::message_create_t& event, int reason=1000){
 dpp::message msg{};
 switch (reason) {
 case IS_NOT_A_REPLY:
-msg.set_flags(dpp::m_ephemeral);
 msg.set_content("Sorry, your message must be a reply for a Jorkle to work");
 event.reply(msg,true);
 break;
@@ -85,10 +84,18 @@ cant_jorkle(event,JORKLE_IS_DISABLED_SERVER);
 co_return;
 }
 if(disabled_jorkle_users[jorkler_id]){
+cant_jorkle(event,JORKLE_IS_DISABLED_JORKLER_GLOBAL);
+co_return;
+}
+if(disabled_jorkle_per_server[server_id][jorkler_id]){
 cant_jorkle(event,JORKLE_IS_DISABLED_JORKLER_SERVERSIDE);
 co_return;
 }
 if(disabled_jorkle_users[jorkled_id]){
+cant_jorkle(event,JORKLE_IS_DISABLED_JORKLED_GLOBAL);
+co_return;
+}
+if(disabled_jorkle_per_server[server_id][jorkled_id]){
 cant_jorkle(event,JORKLE_IS_DISABLED_JORKLED_SERVERSIDE);
 co_return;
 }

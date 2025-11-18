@@ -69,3 +69,13 @@ if(ms) resp += std::format(".{:03}", ms);
 
 return resp;
 }
+
+template<typename T>
+std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b) {
+    std::vector<T> result;
+    result.reserve(a.size() + b.size());
+
+    result.insert(result.end(), a.begin(), a.end());
+    result.insert(result.end(), b.begin(), b.end());
+    return result;
+}
