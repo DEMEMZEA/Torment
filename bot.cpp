@@ -7,7 +7,6 @@
 #include <vector>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
-#include "hpp/extras.hpp"
 using namespace std;
 
 const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
@@ -104,6 +103,9 @@ if (to_lower(event.msg.content) == to_lower("Mods, Jorkle 'em!")) {
 if(event.msg.content=="Mods, Jorkle 'em!") co_await jorkle(event,bot,1);
 else co_await jorkle(event,bot,0);
 }
+if(event.msg.content=="&shutdown"&&event.msg.is_dm()&&event.msg.author.id==480714970548404224){
+bot.shutdown();
+}
 co_return;
 });
 
@@ -172,7 +174,6 @@ msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled")
 msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
-
 }
 }
 co_return;
