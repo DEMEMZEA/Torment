@@ -5,20 +5,19 @@ using json = nlohmann::json;
 
 const std::string filename="data/jorkle_info.json";
 
-
-inline void to_json(json& j, const std::pair<int,int>& p) {
+template<typename T1, typename T2>
+inline void to_json(json& j, const std::pair<T1,T2>& p) {
 j = { p.first, p.second };
 }
 
-inline void from_json(const json& j, std::pair<int,int>& p) {
-p.first = j.at(0).get<int>();
-p.second = j.at(1).get<int>();
+template<typename T1, typename T2>
+inline void from_json(const json& j, std::pair<T1,T2>& p) {
+p.first = j.at(0).get<T1>();
+p.second = j.at(1).get<T2>();
 }
 
 void save() {
 json j;
-
-std::filesystem::create_directories("../data");
 
 // cooldowns_per_server
 for (auto& [server_id, inner] : jorkle_info::cooldowns_per_server) {

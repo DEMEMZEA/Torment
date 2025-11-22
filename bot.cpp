@@ -1,5 +1,10 @@
 #include <bits/stdc++.h>
+#include <dpp/appcommand.h>
+#include <dpp/cache.h>
+#include <dpp/channel.h>
 #include <dpp/dpp.h>
+#include <dpp/message.h>
+#include <dpp/snowflake.h>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 using namespace std;
@@ -65,6 +70,24 @@ toggle_user.add_option(dpp::command_option(dpp::co_boolean,"state","Is it on?",t
 jorkle_toggle.add_option(toggle_user);
 jorkle_toggle.add_option(toggle_server);
 
+dpp::slashcommand permission_sync("permsync","Command to synchronize the permission of channels on a given category to that category's permissions",bot.me.id);
+dpp::command_option sync_channel(dpp::co_sub_command,"channel","sync the permissions of a channel to its category");
+sync_channel.add_option(
+dpp::command_option(dpp::co_channel,"channel","The channel which you're going to sync",true)
+);
+dpp::command_option sync_category(dpp::co_sub_command,"category","sync the permissions of all channels on this category");
+sync_category.add_option(
+dpp::command_option(dpp::co_channel,"category","The category which you're going to sync",true).add_channel_type( dpp::CHANNEL_CATEGORY)
+);
+// permission_sync.add_option(
+// dpp::command_option(dpp::co_channel,"category","The category which you're going to sync",true).add_channel_type( dpp::CHANNEL_CATEGORY)
+// );
+// permission_sync.add_option(
+// dpp::command_option(dpp::co_channel,"channel","The channel which you're going to sync (if you don't say one, it syncs the whole category)",false)
+// );
+permission_sync.add_option(sync_channel);
+permission_sync.add_option(sync_category);
+
 
 auto guildlist = co_await bot.co_current_user_get_guilds();
 std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_map<dpp::snowflake, dpp::guild>>(guildlist.value);
@@ -72,22 +95,19 @@ std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_
 std::vector<dpp::slashcommand> global_commands{boa,jorkle_toggle};
 std::vector<std::vector<dpp::slashcommand>> admin_commands{{},{},{},{},{}};
 std::vector<dpp::slashcommand> server_commands{};
-std::vector<dpp::slashcommand> server_admin_commands{};
+std::vector<dpp::slashcommand> server_admin_commands{permission_sync};
 
 //adding all commands
 
-bot.global_bulk_command_create(global_commands);
-for(auto command: global_commands){
-command.set_default_permissions(0);
-}
-for(auto[id,guild]:guilds){
-bot.guild_bulk_command_create(server_commands,id);
-bot.guild_bulk_command_create(server_admin_commands,id);
-for (auto command: server_admin_commands){
+for (auto& command: server_admin_commands){
 command.set_default_permissions(dpp::permissions::p_administrator);
 
 }
 
+bot.global_bulk_command_create(global_commands);
+for(auto[id,guild]:guilds){
+bot.guild_bulk_command_create(server_commands,id);
+bot.guild_bulk_command_create(server_admin_commands,id);
 
 }
 
@@ -188,6 +208,65 @@ event.reply(msg);
 
 
 
+if(event.command.get_command_name()=="permsync"){
+event.thinking(true);
+std::string subcommand = event.command.get_command_interaction().options[0].name;
+
+if(subcommand=="channel"){
+
+dpp::snowflake channel_id = std::get<dpp::snowflake>(event.get_parameter("channel"));
+dpp::channel* channelptr = dpp::find_channel(channel_id);
+if(channelptr==nullptr){
+co_return;
+}
+auto channel=*channelptr;
+dpp::channel* categoryptr = dpp::find_channel(channel.parent_id);
+if(categoryptr==nullptr){
+co_return;
+}
+auto category=*categoryptr;
+std::vector<dpp::permission_overwrite> perms = category.permission_overwrites;
+for(auto& perm: channel.permission_overwrites){
+co_await bot.co_channel_delete_permission(channel, perm.id);
+}
+for(auto& perm: perms){
+co_await bot.co_channel_edit_permissions(channel_id,perm.id,perm.allow,perm.deny,perm.type);
+}
+auto msg = dpp::message("Done! Permissons syncronized for channel "+channel.name); 
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+}
+
+if(subcommand=="category"){
+
+dpp::snowflake category_id = std::get<dpp::snowflake>(event.get_parameter("category"));
+dpp::channel* categoryptr = dpp::find_channel(category_id);
+if(categoryptr==nullptr){
+co_return;
+}
+auto category=*categoryptr;
+auto channellist = co_await bot.co_channels_get(event.command.guild_id);
+dpp::channel_map channels = std::get<dpp::channel_map>(channellist.value);
+std::vector<dpp::permission_overwrite> perms = category.permission_overwrites;
+for(auto& [id,channel]: channels){
+if(channel.parent_id!=category.id) continue;
+for(auto& perm: channel.permission_overwrites){
+co_await bot.co_channel_delete_permission(channel, perm.id);
+}
+for(auto& perm: perms){
+co_await bot.co_channel_edit_permissions(channel.id,perm.id,perm.allow,perm.deny,perm.type);
+}
+}
+auto msg = dpp::message("Done! Permissons syncronized for category "+category.name); 
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+
+}
+
+}
+
+
+
 co_return;
 });
 
@@ -196,18 +275,25 @@ bot.start(dpp::st_wait);
 
 
 std::jthread hourly_thread([](std::stop_token st) {
+int i{0};
 while (!st.stop_requested()) {
-std::this_thread::sleep_for(1h);
-save();
+std::this_thread::sleep_for(40ms);
+i++;
+if(i%90000)save();
 }
 });
 
 //code that gets executed once the bot is being turned off, if it gets turned off correctly;
 
 {
-cout << "ending" << endl;
+cout << "\nending..." << endl;
 save();
+cout << "\nSaving ended!" << endl;
+hourly_thread.request_stop();
+cout << "\nAutosaver ended" << endl;
+cout << "\nEverything finished. Ready to shut down."<<endl;
 }
+
 
 return 0;
 }
