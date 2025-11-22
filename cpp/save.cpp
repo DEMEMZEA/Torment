@@ -3,7 +3,8 @@
 #include <dpp/snowflake.h>
 using json = nlohmann::json;
 
-const std::string filename="../data/jorkle_info.json";
+const std::string filename="data/jorkle_info.json";
+
 
 inline void to_json(json& j, const std::pair<int,int>& p) {
 j = { p.first, p.second };
@@ -16,6 +17,8 @@ p.second = j.at(1).get<int>();
 
 void save() {
 json j;
+
+std::filesystem::create_directories("../data");
 
 // cooldowns_per_server
 for (auto& [server_id, inner] : jorkle_info::cooldowns_per_server) {

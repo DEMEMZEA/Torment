@@ -1,10 +1,5 @@
 #include <bits/stdc++.h>
-#include <dpp/appcommand.h>
 #include <dpp/dpp.h>
-#include <dpp/once.h>
-#include <dpp/permissions.h>
-#include <dpp/snowflake.h>
-#include <vector>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 using namespace std;
@@ -14,7 +9,7 @@ const std::unordered_map<dpp::snowflake,int> bot_superusers{
 {dpp::snowflake(480714970548404224),5},
 
 };
-
+const dpp::snowflake main_server{815006475004543037};
 
 std::string to_lower(std::string s) {
 std::transform(s.begin(), s.end(), s.begin(),
@@ -22,10 +17,17 @@ std::transform(s.begin(), s.end(), s.begin(),
 return s;
 }
 
+void signalHandler(int signalNum) {
+    save();
+    cout << "\n\n\nPlease, avoid quitting the program with Ctrl+C, please try closing it with one of the proper shutdown commands\n\n\n" << endl;
+    exit(signalNum);
+}
+
 int main(){
 
 dpp::cluster bot(token, dpp::i_default_intents | dpp::i_message_content);
 struct load_info{};
+signal(SIGINT, signalHandler);
 
 bot.on_log(dpp::utility::cout_logger());
 
@@ -52,7 +54,7 @@ dpp::command_option toggle_server(dpp::co_sub_command,"server","Toggle it for th
 toggle_server.add_option(
 dpp::command_option(dpp::co_boolean,"state","will it be enabled?",true)
 );
-dpp::command_option toggle_user(dpp::co_sub_command_group,"self","Toggle it for yourself");
+dpp::command_option toggle_user(dpp::co_sub_command,"self","Toggle it for yourself");
 toggle_user.add_option(
 dpp::command_option(dpp::co_string, "scope", "Server-specific or global toggle", true)
 .add_choice(dpp::command_option_choice("server", "server"))
@@ -68,7 +70,7 @@ auto guildlist = co_await bot.co_current_user_get_guilds();
 std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_map<dpp::snowflake, dpp::guild>>(guildlist.value);
 
 std::vector<dpp::slashcommand> global_commands{boa,jorkle_toggle};
-std::vector<std::vector<dpp::slashcommand>> global_admin_commands{{},{},{},{},{}};
+std::vector<std::vector<dpp::slashcommand>> admin_commands{{},{},{},{},{}};
 std::vector<dpp::slashcommand> server_commands{};
 std::vector<dpp::slashcommand> server_admin_commands{};
 
@@ -111,6 +113,8 @@ co_return;
 
 bot.on_slashcommand([&bot](const dpp::slashcommand_t& event)-> dpp::task<void> {
 
+
+
 if(event.command.get_command_name()=="boa"){
 int pct = get<int64_t>(event.get_parameter("percentage"));
 bool ephem{1};
@@ -130,11 +134,14 @@ if(ephem) msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
 
+
+
 if(event.command.get_command_name()=="jorkle"){
 dpp::message msg;
 bool dm = event.command.get_channel().is_dm();
-std::string subcommand = std::get<std::string>(event.get_parameter("command")); 
+std::string subcommand = event.command.get_command_interaction().options[0].name;
 bool state = !std::get<bool>(event.get_parameter("state"));
+
 if(subcommand=="server"){
 if(dm){
 msg.content="Sorry, this subcommand must be executed on a server you're admin";
@@ -144,7 +151,7 @@ co_return;
 dpp::permission perms = event.command.get_resolved_permission(event.command.member.user_id);
 if(perms & dpp::p_administrator){
 jorkle_info::disabled_jorkle_servers[event.command.member.guild_id]=state;
-msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " on this server";
+msg.content=std::string("Okay, Jorkle has been ") + (state?"disabled":"enabled") + " on this server";
 event.reply(msg);
 }
 else{
@@ -153,13 +160,14 @@ msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
 }
+
 if(subcommand=="self"){
 msg.set_flags(dpp::m_ephemeral);
 msg.content="";
 std::string scope = std::get<std::string>(event.get_parameter("scope"));
 if(scope=="general"){
 jorkle_info::disabled_jorkle_users[event.command.member.user_id]=state;
-msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " for you";
+msg.content=std::string("Okay, Jorkle has been ") + (state?"disabled":"enabled") + " for you";
 if(!dm) msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
@@ -170,19 +178,34 @@ event.reply(msg);
 co_return;
 }
 jorkle_info::disabled_jorkle_per_server[event.command.member.guild_id][event.command.member.user_id]=state;
-msg.content=std::string("Okay, Jorkle has been ") + (state?"enabled":"disabled") + " for you on this server!";
+msg.content=std::string("Okay, Jorkle has been ") + (state?"disabled":"enabled") + " for you on this server!";
 msg.set_flags(dpp::m_ephemeral);
 event.reply(msg);
 }
 }
+
 }
+
+
+
 co_return;
 });
 
 bot.start(dpp::st_wait);
 
-//code that gets executed once the bot is being turned off;
+
+
+std::jthread hourly_thread([](std::stop_token st) {
+while (!st.stop_requested()) {
+std::this_thread::sleep_for(1h);
+save();
+}
+});
+
+//code that gets executed once the bot is being turned off, if it gets turned off correctly;
+
 {
+cout << "ending" << endl;
 save();
 }
 

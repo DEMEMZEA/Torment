@@ -116,17 +116,18 @@ dice += extra_dice;
 double chance;
 double jorkler_pts = server_points[server_id][jorkler_id];
 double jorkled_pts = server_points[server_id][jorkled_id];
-if(jorkler_pts==0&&jorkled_pts==0) chance=0.5;
-else if (jorkler_pts==0) chance=0;
-else if (jorkled_pts==0) chance=1;
+if(jorkler_pts==0.0&&jorkled_pts==0.0) chance=0.5;
+else if (jorkler_pts==0.0) chance=0;
+else if (jorkled_pts==0.0) chance=1;
 else{
 double val = pow(jorkler_pts/jorkled_pts,0.2);
 chance = val*val/(1+val*val);
 }
 
-bool success{};
+bool success;
 
 if(dice>1){
+success=false;
 for(int i=0;i<dice;i++){
 
 if(static_cast<double>(rand())/static_cast<double>(RAND_MAX)<chance) success=true;
