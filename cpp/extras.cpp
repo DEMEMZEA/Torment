@@ -72,10 +72,22 @@ return resp;
 
 template<typename T>
 std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b) {
-    std::vector<T> result;
-    result.reserve(a.size() + b.size());
+std::vector<T> result;
+result.reserve(a.size() + b.size());
 
-    result.insert(result.end(), a.begin(), a.end());
-    result.insert(result.end(), b.begin(), b.end());
-    return result;
+result.insert(result.end(), a.begin(), a.end());
+result.insert(result.end(), b.begin(), b.end());
+return result;
+}
+
+template<typename T>
+std::vector<T>& operator+=(std::vector<T>& a, const std::vector<T>& b) {
+if(a.empty()){
+a = b;               // optional fast-path
+} 
+else{
+a.reserve(a.size() + b.size());
+a.insert(a.end(), b.begin(), b.end());
+}
+return a;
 }

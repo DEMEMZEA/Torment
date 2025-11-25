@@ -16,8 +16,8 @@ std::unordered_map<dpp::snowflake, bool> disabled_jorkle_servers;
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_users;
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, bool>> disabled_jorkle_per_server;
 constinit double cooldown{(24*60*60)};
-}
-using namespace jorkle_info;
+}using namespace jorkle_info;
+
 constexpr int IS_NOT_A_REPLY{1001},COOLDOWN_IS_NOT_OVER{1002},JORKLE_IS_DISABLED_SERVER{1003},JORKLE_IS_DISABLED_JORKLER_SERVERSIDE{1004},JORKLE_IS_DISABLED_JORKLER_GLOBAL{1005},JORKLE_IS_DISABLED_JORKLED_SERVERSIDE{1006},JORKLE_IS_DISABLED_JORKLED_GLOBAL{1007};
 constexpr int UNDEFINED_CASE{1000};
 
