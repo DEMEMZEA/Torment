@@ -144,11 +144,10 @@ command.set_default_permissions(perm);
 
 co_await bot.co_global_bulk_command_create(global_commands);
 for(auto[id,guild]:guilds){
-co_await bot.co_guild_bulk_command_create(all_guild_commands,id);
-if(id==mainGuild_id){
-co_await bot.co_guild_bulk_command_create(all_mainGuild_commands,id);
-}
 co_await bot.co_sleep(60);
+co_await bot.co_guild_bulk_command_create(all_guild_commands,id);
+if(id!=mainGuild_id) continue;
+co_await bot.co_guild_bulk_command_create(all_mainGuild_commands,id);
 }
 
 }
