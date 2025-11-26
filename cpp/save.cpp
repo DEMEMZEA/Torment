@@ -158,7 +158,10 @@ for(const auto& user: tracker_info::globally_tracked){
     j["globally_tracked"].push_back(std::to_string(user));
 }
 
-
+//message_templates
+for (const auto& [guild_id, msg]: tracker_info::message_templates){
+    j["tracker_channels"][std::to_string(guild_id)] = msg;
+}
 
 std::ofstream out(filename);
 out << j.dump(4);
@@ -198,6 +201,14 @@ tracker_info::tracker_channels[server_id]=channel_id;
 tracker_info::globally_tracked.clear();
 for(auto& val:j["globally_tracked"]){
 tracker_info::globally_tracked.insert(std::stoull(val.get<std::string>()));
+}
+
+//message_templates
+tracker_info::message_templates.clear();
+for(auto& [server_str,val]: j["message_templates"].items()){
+dpp::snowflake server_id = std::stoull(server_str);
+std::string msg = val.get<std::string>();
+tracker_info::message_templates[server_id]=msg;
 }
 
 }

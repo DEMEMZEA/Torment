@@ -2,7 +2,11 @@
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 #include "hpp/tracker.hpp"
+#include <dpp/appcommand.h>
+#include <dpp/cluster.h>
 #include <dpp/dpp.h>
+#include <dpp/intents.h>
+#include <dpp/message.h>
 using namespace std;
 
 const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
@@ -26,7 +30,7 @@ void signalHandler(int signalNum) {
 
 int main(){
 
-dpp::cluster bot(token, dpp::i_default_intents | dpp::i_message_content);
+dpp::cluster bot(token, dpp::i_default_intents | dpp::i_message_content | dpp::i_guild_members);
 struct load_info{};
 signal(SIGINT, signalHandler);
 
@@ -108,6 +112,11 @@ dpp::command_option(dpp::co_string,"id","the id of the user you want to start tr
 global_tracker.add_option(
 dpp::command_option(dpp::co_boolean,"untrack","do you want to stop tracking this user?",false)
 );
+dpp::slashcommand tracker_template("tracker_template","Template for the message sent before the tracker message",bot.me.id);
+tracker_template.add_option(
+dpp::command_option(dpp::co_string,"template","The template you're going to use. \"?\" for").set_max_length(4000)
+);
+dpp::slashcommand shutdown("shutdown","Command used to shut the bot down ( requires aditional bot-specific permissions)",bot.me.id);
 
 auto guildlist = co_await bot.co_current_user_get_guilds();
 std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_map<dpp::snowflake, dpp::guild>>(guildlist.value);
@@ -116,14 +125,14 @@ std::vector<dpp::slashcommand> global_commands{boa,jorkle_toggle};
 
 std::vector<dpp::slashcommand> all_mainGuild_commands{};
 std::unordered_map<uint64_t, std::vector<dpp::slashcommand>> mainGuild_commands={
-{dpp::permissions::p_administrator,{global_tracker}}
+{dpp::permissions::p_administrator,{global_tracker,shutdown}}
 };
 
 std::vector<dpp::slashcommand> all_guild_commands{};
 std::unordered_map<uint64_t, std::vector<dpp::slashcommand>> guild_commands={
 {dpp::permissions::p_use_application_commands,{jorkle_toggle}},
 {dpp::permissions::p_manage_channels,{permission_sync}},
-{dpp::permissions::p_administrator,{tracker_track,tracker_untrack,tracker_channel}}
+{dpp::permissions::p_administrator,{tracker_track,tracker_untrack,tracker_channel,tracker_template}}
 };
 
 
@@ -226,7 +235,6 @@ msg.set_flags(dpp::m_ephemeral);
 
 if(subcommand=="self"){
 msg.set_flags(dpp::m_ephemeral);
-;
 std::string scope = std::get<std::string>(event.get_parameter("scope"));
 if(scope=="general"){
 jorkle_info::disabled_jorkle_users[event.command.member.user_id]=state;
@@ -340,6 +348,19 @@ msg.set_flags(dpp::m_ephemeral);
 
 
 
+if(command=="tracker_template"){
+
+dpp::snowflake guild_id = event.command.guild_id;
+std::string template_string = std::get<std::string>(event.get_parameter("template"));
+co_await message_template(guild_id,template_string);
+msg.set_content("Okay! Template set!");
+msg.set_flags(dpp::m_ephemeral);
+
+
+}
+
+
+
 if(command=="global_tracker"){
 
 dpp::snowflake user_id = stoull(std::get<std::string>(event.get_parameter("id")));
@@ -353,6 +374,29 @@ else{
 msg.set_content("Done, the given user is now not being tracked anymore");
 }
 
+}
+
+
+
+if(command=="shutdown"){
+if(bot_superusers.contains(event.command.usr.id)==false){
+msg.set_content("Sorry, you're not a bot superuser");
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+co_return;
+} 
+if(bot_superusers.at(event.command.usr.id)<3){
+msg.set_content("Sorry, your permission level("+std::to_string(bot_superusers.at(event.command.usr.id))+") is too low, the required level for this admin command is 3");
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+co_return;
+} 
+msg.set_content("Okay, shutting down");
+msg.set_flags(dpp::m_ephemeral);
+event.reply(msg);
+std::this_thread::sleep_for(500ms);
+bot.shutdown();
+co_return;
 }
 
 
