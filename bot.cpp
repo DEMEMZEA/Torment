@@ -84,12 +84,7 @@ dpp::command_option sync_category(dpp::co_sub_command,"category","sync the permi
 sync_category.add_option(
 dpp::command_option(dpp::co_channel,"category","The category which you're going to sync",true).add_channel_type( dpp::CHANNEL_CATEGORY)
 );
-// permission_sync.add_option(
-// dpp::command_option(dpp::co_channel,"category","The category which you're going to sync",true).add_channel_type( dpp::CHANNEL_CATEGORY)
-// );
-// permission_sync.add_option(
-// dpp::command_option(dpp::co_channel,"channel","The channel which you're going to sync (if you don't say one, it syncs the whole category)",false)
-// );
+
 permission_sync.add_option(sync_channel);
 permission_sync.add_option(sync_category);
 
@@ -113,9 +108,6 @@ global_tracker.add_option(
 dpp::command_option(dpp::co_boolean,"untrack","do you want to stop tracking this user?",false)
 );
 dpp::slashcommand tracker_template("tracker_template","Template for the message sent before the tracker message",bot.me.id);
-tracker_template.add_option(
-dpp::command_option(dpp::co_string,"template","The template you're going to use. \"?\" for").set_max_length(4000)
-);
 dpp::slashcommand shutdown("shutdown","Command used to shut the bot down ( requires aditional bot-specific permissions)",bot.me.id);
 
 auto guildlist = co_await bot.co_current_user_get_guilds();
@@ -150,12 +142,13 @@ for (auto command:commandlist){
 command.set_default_permissions(perm);
 }}
 
-bot.global_bulk_command_create(global_commands);
+co_await bot.co_global_bulk_command_create(global_commands);
 for(auto[id,guild]:guilds){
-bot.guild_bulk_command_create(all_guild_commands,id);
-//std::cout << "\nServer: "<< id << "\nMainGuild: " << mainGuild_id << "\nIs: " << !(id!=mainGuild_id) << std::endl;
-if(id!=mainGuild_id) continue;
-bot.guild_bulk_command_create(all_mainGuild_commands,id);
+co_await bot.co_guild_bulk_command_create(all_guild_commands,id);
+if(id==mainGuild_id){
+co_await bot.co_guild_bulk_command_create(all_mainGuild_commands,id);
+}
+co_await bot.co_sleep(60);
 }
 
 }
@@ -350,12 +343,17 @@ msg.set_flags(dpp::m_ephemeral);
 
 if(command=="tracker_template"){
 
-dpp::snowflake guild_id = event.command.guild_id;
-std::string template_string = std::get<std::string>(event.get_parameter("template"));
-co_await message_template(guild_id,template_string);
-msg.set_content("Okay! Template set!");
-msg.set_flags(dpp::m_ephemeral);
+dpp::interaction_modal_response modal("tracker_message","Type the tracker message template here");
 
+modal.add_component(
+dpp::component()
+.set_label("Idk")
+.set_id("template")
+.set_type(dpp::cot_text)
+.set_text_style(dpp::text_paragraph)
+);
+event.dialog(modal);
+co_return;
 
 }
 
@@ -405,7 +403,31 @@ event.reply(msg);
 co_return;
 });
 
+bot.on_form_submit([&bot](const dpp::form_submit_t& event)-> dpp::task<void> {
+const std::string form_name{event.custom_id};
+dpp::message msg{""};
 
+
+
+if(form_name=="tracker_message"){
+
+for (const auto& row : event.components) {
+for (const auto& comp : row.components) {
+if (comp.custom_id == "template") {
+std::string template_string = std::get<std::string>(comp.value);
+co_await message_template(event.command.guild_id,template_string);
+break;
+}
+}
+}
+msg.set_content("Okay! Template set!");
+msg.set_flags(dpp::m_ephemeral);
+}
+
+
+event.reply(msg);
+co_return;
+});
 
 bot.start(dpp::st_wait);
 
