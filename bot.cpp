@@ -1,5 +1,4 @@
 #include <bits/stdc++.h>
-#include "hpp/extras.hpp"
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 #include "hpp/tracker.hpp"
@@ -102,7 +101,7 @@ dpp::slashcommand tracker_channel("tracker_channel","Set the channel that the me
 tracker_channel.add_option(
 dpp::command_option(dpp::co_channel,"channel","channel the messages will go to",true)
 );
-dpp::slashcommand global_tracker("global_tracker","",bot.me.id);
+dpp::slashcommand global_tracker("global_tracker","Globally track or untrack a user by ID (admin only)",bot.me.id);
 global_tracker.add_option(
 dpp::command_option(dpp::co_string,"id","the id of the user you want to start tracking",true)
 );
@@ -124,14 +123,20 @@ std::vector<dpp::slashcommand> all_guild_commands{};
 std::unordered_map<uint64_t, std::vector<dpp::slashcommand>> guild_commands={
 {dpp::permissions::p_use_application_commands,{jorkle_toggle}},
 {dpp::permissions::p_manage_channels,{permission_sync}},
-{dpp::permissions::p_administrator,{tracker_track,tracker_untrack}}
+{dpp::permissions::p_administrator,{tracker_track,tracker_untrack,tracker_channel}}
 };
 
 
 //adding all commands
 
 for (auto& [perm,commandlist]: guild_commands){
-all_guild_commands+=commandlist;
+all_guild_commands.insert(all_guild_commands.end(),commandlist.begin(),commandlist.end());
+for (auto command:commandlist){
+command.set_default_permissions(perm);
+}}
+
+for (auto& [perm,commandlist]: mainGuild_commands){
+all_mainGuild_commands.insert(all_mainGuild_commands.end(),commandlist.begin(),commandlist.end());
 for (auto command:commandlist){
 command.set_default_permissions(perm);
 }}
@@ -139,6 +144,7 @@ command.set_default_permissions(perm);
 bot.global_bulk_command_create(global_commands);
 for(auto[id,guild]:guilds){
 bot.guild_bulk_command_create(all_guild_commands,id);
+//std::cout << "\nServer: "<< id << "\nMainGuild: " << mainGuild_id << "\nIs: " << !(id!=mainGuild_id) << std::endl;
 if(id!=mainGuild_id) continue;
 bot.guild_bulk_command_create(all_mainGuild_commands,id);
 }
@@ -162,7 +168,6 @@ else co_await jorkle(event,bot,0);
 if(event.msg.content=="&shutdown"&&event.msg.is_dm()&&event.msg.author.id==480714970548404224){
 bot.shutdown();
 }
-
 
 co_await tracker_check(event,bot);
 
@@ -341,6 +346,12 @@ dpp::snowflake user_id = stoull(std::get<std::string>(event.get_parameter("id"))
 bool untrack{0};
 if(event.get_parameter("untrack").index()!=0) untrack = std::get<bool>(event.get_parameter("untrack"));
 co_await global_tracker(user_id,untrack);
+if(!untrack){
+msg.set_content("Done, the given user is now being tracked");
+}
+else{
+msg.set_content("Done, the given user is now not being tracked anymore");
+}
 
 }
 
