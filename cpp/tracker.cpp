@@ -57,20 +57,20 @@ auto it = message_templates.find(guild_id);
 if(!(it == message_templates.end() || it->second.empty())){
 std::string str{message_templates.at(guild_id)};
 /*
-std::regex_replace(str,std::regex(""),"");
+str = std::regex_replace(str,std::regex(""),"");
 */
-std::regex_replace(str,std::regex("msg"),"message");
-std::regex_replace(str,std::regex("%message(?!_)"),message_link);
-std::regex_replace(str,std::regex("%message_id"),std::to_string(message_id));
-std::regex_replace(str,std::regex("usr"),"user");
-std::regex_replace(str,std::regex("%user(?!_)"),std::string()+"<@"+std::to_string(user_id)+">");
-std::regex_replace(str,std::regex("%user_id"),std::to_string(user_id));
-std::regex_replace(str,std::regex("%user_name"),user_name);
-std::regex_replace(str,std::regex("%user_(s|server)(_)?(nick)?name"),user_server_nickname);
-std::regex_replace(str,std::regex("%user_(g|global)(_)?(nick)?name"),user_global_nickname);
-std::regex_replace(str,std::regex("chnl"),"channel");
-std::regex_replace(str,std::regex("%channel(?!_)"),std::string()+"<#"+std::to_string(channel_id)+">");
-std::regex_replace(str,std::regex("%channel_id"),std::to_string(channel_id));
+str = std::regex_replace(str,std::regex("msg"),"message");
+str = std::regex_replace(str,std::regex("%message(?!_)"),message_link);
+str = std::regex_replace(str,std::regex("%message_id"),std::to_string(message_id));
+str = std::regex_replace(str,std::regex("usr"),"user");
+str = std::regex_replace(str,std::regex("%user(?!_)"),std::string()+"<@"+std::to_string(user_id)+">");
+str = std::regex_replace(str,std::regex("%user_id"),std::to_string(user_id));
+str = std::regex_replace(str,std::regex("%user_name"),user_name);
+str = std::regex_replace(str,std::regex("%user_(s|server)(_)?(nick)?name"),user_server_nickname);
+str = std::regex_replace(str,std::regex("%user_(g|global)(_)?(nick)?name"),user_global_nickname);
+str = std::regex_replace(str,std::regex("chnl"),"channel");
+str = std::regex_replace(str,std::regex("%channel(?!_)"),std::string()+"<#"+std::to_string(channel_id)+">");
+str = std::regex_replace(str,std::regex("%channel_id"),std::to_string(channel_id));
 pre_msg.set_content(str);
 }
 else{
