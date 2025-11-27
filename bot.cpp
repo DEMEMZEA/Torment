@@ -39,8 +39,6 @@ signal(SIGINT, signalHandler);
 bot.on_log(dpp::utility::cout_logger());
 
 
-
-
 bot.on_ready([&bot](const dpp::ready_t& event)-> dpp::task<void>{
 (void)event;
 if(dpp::run_once<struct load_info>()){
@@ -131,22 +129,25 @@ std::unordered_map<uint64_t, std::vector<dpp::slashcommand>> guild_commands={
 //adding all commands
 
 for (auto& [perm,commandlist]: guild_commands){
-all_guild_commands.insert(all_guild_commands.end(),commandlist.begin(),commandlist.end());
-for (auto command:commandlist){
+for (auto& command:commandlist){
 command.set_default_permissions(perm);
-}}
+}
+all_guild_commands.insert(all_guild_commands.end(),commandlist.begin(),commandlist.end());
+}
 
 for (auto& [perm,commandlist]: mainGuild_commands){
-all_mainGuild_commands.insert(all_mainGuild_commands.end(),commandlist.begin(),commandlist.end());
-for (auto command:commandlist){
+for (auto& command:commandlist){
 command.set_default_permissions(perm);
-}}
+}
+all_mainGuild_commands.insert(all_mainGuild_commands.end(),commandlist.begin(),commandlist.end());
+}
 
 co_await bot.co_global_bulk_command_create(global_commands);
 for(auto[id,guild]:guilds){
-co_await bot.co_sleep(60);
+co_await bot.co_sleep(90);
 co_await bot.co_guild_bulk_command_create(all_guild_commands,id);
 if(id!=mainGuild_id) continue;
+co_await bot.co_sleep(90);
 co_await bot.co_guild_bulk_command_create(all_mainGuild_commands,id);
 }
 
@@ -410,15 +411,16 @@ dpp::message msg{""};
 
 if(form_name=="tracker_message"){
 
+std::string template_string{""};
 for (const auto& row : event.components) {
 for (const auto& comp : row.components) {
 if (comp.custom_id == "template") {
-std::string template_string = std::get<std::string>(comp.value);
-co_await message_template(event.command.guild_id,template_string);
+template_string = std::get<std::string>(comp.value);
 break;
 }
 }
 }
+co_await message_template(event.command.guild_id,template_string);
 msg.set_content("Okay! Template set!");
 msg.set_flags(dpp::m_ephemeral);
 }

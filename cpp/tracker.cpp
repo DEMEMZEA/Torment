@@ -53,7 +53,8 @@ std::string message_link = "https://discord.com/channels/"+std::to_string(guild_
 if(user_server_nickname=="") user_server_nickname=user_global_nickname;
 dpp::message msg{event.msg};
 dpp::message pre_msg{};
-if((message_templates.contains(guild_id)==false)||(message_templates.at(guild_id)=="")){
+auto it = message_templates.find(guild_id);
+if(!(it == message_templates.end() || it->second.empty())){
 std::string str{message_templates.at(guild_id)};
 /*
 std::regex_replace(str,std::regex(""),"");

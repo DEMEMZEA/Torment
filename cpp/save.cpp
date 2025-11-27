@@ -160,7 +160,7 @@ for(const auto& user: tracker_info::globally_tracked){
 
 //message_templates
 for (const auto& [guild_id, msg]: tracker_info::message_templates){
-    j["tracker_channels"][std::to_string(guild_id)] = msg;
+    j["message_templates"][std::to_string(guild_id)] = msg;
 }
 
 std::ofstream out(filename);
