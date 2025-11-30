@@ -72,8 +72,6 @@ dpp::message message = std::get<dpp::message>(msg.value);
 dpp::snowflake jorkled_id=message.author.id;
 auto usr = co_await bot.co_guild_get_member(event.msg.guild_id,jorkled_id);
 dpp::guild_member jorkled = std::get<dpp::guild_member>(usr.value);
-dpp::permission jorkler_perms = dpp::find_guild(server_id)->base_permissions(jorkler);
-dpp::permission jorkled_perms = dpp::find_guild(server_id)->base_permissions(jorkled);
 
 
 
