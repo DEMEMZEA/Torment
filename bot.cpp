@@ -34,8 +34,11 @@ signal(SIGINT, signalHandler);
 
 bot.on_log(dpp::utility::cout_logger());
 
+bot.on_voice_state_update([&bot](const dpp::voice_state_update_t& event)-> dpp::task<void> {
+co_return;
+});
 
-bot.on_ready([&bot](const dpp::ready_t& event)-> dpp::task<void>{
+bot.on_ready([&bot](const dpp::ready_t& event)-> dpp::task<void> {
 (void)event;
 if(dpp::run_once<struct load_info>()){
 load();
