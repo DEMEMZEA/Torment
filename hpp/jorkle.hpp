@@ -12,6 +12,7 @@ extern std::unordered_map<dpp::snowflake, std::pair<int,int>> extra_global_dice;
 extern std::unordered_map<dpp::snowflake, bool> disabled_jorkle_servers;
 extern std::unordered_map<dpp::snowflake, bool> disabled_jorkle_users;
 extern std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, bool>> disabled_jorkle_per_server;
+extern std::unordered_map<dpp::snowflake,std::unordered_map<dpp::snowflake, time_t>> admin_jorkled;
 extern double cooldown;
 };
 #endif

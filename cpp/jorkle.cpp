@@ -1,11 +1,6 @@
 #include "../hpp/jorkle.hpp"
 #include "../hpp/extras.hpp"
-#include <ctime>
-#include <dpp/message.h>
-#include <dpp/restresults.h>
-#include <dpp/snowflake.h>
-#include <string>
-#include <unordered_map>
+#include "../hpp/extras_dpp.hpp"
 
 namespace jorkle_info {
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, double>>cooldowns_per_server;
@@ -15,6 +10,7 @@ std::unordered_map<dpp::snowflake, std::pair<int,int>> extra_global_dice; // att
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_servers;
 std::unordered_map<dpp::snowflake, bool> disabled_jorkle_users;
 std::unordered_map<dpp::snowflake, std::unordered_map<dpp::snowflake, bool>> disabled_jorkle_per_server;
+std::unordered_map<dpp::snowflake,std::unordered_map<dpp::snowflake, time_t>> admin_jorkled;
 constinit double cooldown{(24*60*60)};
 }using namespace jorkle_info;
 
@@ -76,6 +72,8 @@ dpp::message message = std::get<dpp::message>(msg.value);
 dpp::snowflake jorkled_id=message.author.id;
 auto usr = co_await bot.co_guild_get_member(event.msg.guild_id,jorkled_id);
 dpp::guild_member jorkled = std::get<dpp::guild_member>(usr.value);
+dpp::permission jorkler_perms = dpp::find_guild(server_id)->base_permissions(jorkler);
+dpp::permission jorkled_perms = dpp::find_guild(server_id)->base_permissions(jorkled);
 
 
 
@@ -149,19 +147,29 @@ std::string jorkle_string = "<@"+std::to_string(jorkled_id)+"> Was jorkled!";
 event.reply(jorkle_string,true);
 time_t latest;
 latest = time(nullptr);
+if(is_admin(jorkled,server_id)){
+if(admin_jorkled[server_id][jorkled_id]>latest) latest = admin_jorkled[server_id][jorkled_id];
+admin_jorkled[server_id][jorkled_id]=latest+60;
+}
+else{
 if(jorkled.communication_disabled_until>latest) latest = jorkled.communication_disabled_until;
 co_await bot.co_guild_member_timeout(server_id, jorkled_id, latest+60);
-cooldowns_per_server[server_id][jorkler_id]=sent_on;
 }
-
+}
 else{
 std::string jorkle_string = "<@"+std::to_string(jorkler_id)+"> Tried and failed a Jorkle! Do better.";
 event.reply(jorkle_string,true);
 time_t latest;
 latest = time(nullptr);
+if(is_admin(jorkler,server_id)){
+if(admin_jorkled[server_id][jorkler_id]>latest) latest = admin_jorkled[server_id][jorkler_id];
+admin_jorkled[server_id][jorkler_id]=latest+600;
+}
+else{
 if(jorkler.communication_disabled_until>latest) latest = jorkler.communication_disabled_until;
 co_await bot.co_guild_member_timeout(server_id, jorkler_id, latest+600);
-cooldowns_per_server[server_id][jorkler_id]=event.msg.id.get_creation_time();
+}
 }
 
+cooldowns_per_server[server_id][jorkler_id]=sent_on;
 }

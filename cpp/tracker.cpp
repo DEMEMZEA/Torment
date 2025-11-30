@@ -1,8 +1,5 @@
 #include "../hpp/tracker.hpp"
-#include <dpp/message.h>
-#include <dpp/snowflake.h>
-#include <regex>
-#include <string>
+
 namespace tracker_info {
 std::unordered_map<dpp::snowflake, std::set<dpp::snowflake>> tracked_users;
 std::unordered_map<dpp::snowflake, dpp::snowflake> tracker_channels;

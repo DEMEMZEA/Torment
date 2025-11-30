@@ -66,6 +66,14 @@ inner_j[std::to_string(user_id)] = val;
 j["disabled_jorkle_per_server"][std::to_string(server_id)] = inner_j;
 }
 
+//admin_jorkled
+for (auto& [server_id, inner] : jorkle_info::admin_jorkled) {
+json inner_j;
+for (auto& [user_id, val] : inner)
+inner_j[std::to_string(user_id)] = val;
+j["admin_jorkled"][std::to_string(server_id)] = inner_j;
+}
+
 // Write to file
 std::ofstream out(filename);
 out << j.dump(4);
@@ -133,6 +141,17 @@ for (auto& [user_str, val] : inner_j.items())
 inner_map[std::stoull(user_str)] = val.get<bool>();
 jorkle_info::disabled_jorkle_per_server[server_id] = inner_map;
 }
+
+//admin_jorkled
+jorkle_info::admin_jorkled.clear();
+for (auto& [server_str, inner_j] : j["admin_jorkled"].items()) {
+dpp::snowflake server_id = std::stoull(server_str);
+std::unordered_map<dpp::snowflake, time_t> inner_map;
+for (auto& [user_str, val] : inner_j.items())
+inner_map[std::stoull(user_str)] = val.get<time_t>();
+jorkle_info::admin_jorkled[server_id] = inner_map;
+}
+
 }
 
 void save_tracker(){

@@ -1,12 +1,8 @@
 #include <bits/stdc++.h>
+#include <dpp/dpp.h>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 #include "hpp/tracker.hpp"
-#include <dpp/appcommand.h>
-#include <dpp/cluster.h>
-#include <dpp/dpp.h>
-#include <dpp/intents.h>
-#include <dpp/message.h>
 using namespace std;
 
 const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
@@ -171,6 +167,10 @@ if(event.msg.content=="&shutdown"&&event.msg.is_dm()&&event.msg.author.id==48071
 bot.shutdown();
 }
 
+
+if(jorkle_info::admin_jorkled[event.msg.guild_id][event.msg.author.id]){
+co_await bot.co_message_delete(event.msg.id, event.msg.channel_id);
+}
 co_await tracker_check(event,bot);
 
 co_return;
