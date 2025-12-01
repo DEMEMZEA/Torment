@@ -1,9 +1,8 @@
 #ifndef EXTRAS_HPP
 #define EXTRAS_HPP
+#include <dpp/dpp.h>
 #include <bits/stdc++.h>
-std::string to_time(long long int time);
-template<typename T>
-std::vector<T> operator+(const std::vector<T>& a, const std::vector<T>& b);
-template<typename T>
-std::vector<T>& operator+=(std::vector<T>& a, const std::vector<T>& b);
+// FUNCTIONS DECLARED HERE MUST USE BOTH DPP AND THINGS INCLUDED IN OTHER PLACES. 
+// If you want to code something that just uses dpp, add to extras_dpp.(h/c)pp,
+// If you want to code something that does not use dpp, add to extras_cpp.(h/c)pp
 #endif

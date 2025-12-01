@@ -34,7 +34,7 @@ signal(SIGINT, signalHandler);
 
 bot.on_log(dpp::utility::cout_logger());
 
-bot.on_voice_state_update([&bot](const dpp::voice_state_update_t& event)-> dpp::task<void> {
+bot.on_voice_state_update([&bot]([[maybe_unused]]const dpp::voice_state_update_t& event)-> dpp::task<void> {
 co_return;
 });
 
@@ -171,7 +171,7 @@ bot.shutdown();
 }
 
 
-if(jorkle_info::admin_jorkled[event.msg.guild_id][event.msg.author.id]){
+if(jorkle_info::admin_jorkled[event.msg.guild_id][event.msg.author.id]>time(nullptr)){
 co_await bot.co_message_delete(event.msg.id, event.msg.channel_id);
 }
 co_await tracker_check(event,bot);
