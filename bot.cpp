@@ -1,5 +1,7 @@
 #include <bits/stdc++.h>
+#include <dpp/appcommand.h>
 #include <dpp/dpp.h>
+#include <dpp/message.h>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 #include "hpp/tracker.hpp"
@@ -89,23 +91,43 @@ dpp::slashcommand tracker_track("track","Command used to track suspicious users"
 tracker_track.add_option(
 dpp::command_option(dpp::co_user,"user","User you want to start tracking",true)
 );
+
 dpp::slashcommand tracker_untrack("untrack","Command used to stop tracking users if you don't find them sus anymore",bot.me.id);
 tracker_untrack.add_option(
 dpp::command_option(dpp::co_user,"user","User you want to stop tracking",true)
 );
+
 dpp::slashcommand tracker_channel("tracker_channel","Set the channel that the messages of the tracked members will go to",bot.me.id);
 tracker_channel.add_option(
 dpp::command_option(dpp::co_channel,"channel","channel the messages will go to",true)
 );
+
 dpp::slashcommand global_tracker("global_tracker","Globally track or untrack a user by ID (admin only)",bot.me.id);
+
 global_tracker.add_option(
 dpp::command_option(dpp::co_string,"id","the id of the user you want to start tracking",true)
 );
 global_tracker.add_option(
 dpp::command_option(dpp::co_boolean,"untrack","do you want to stop tracking this user?",false)
 );
+
 dpp::slashcommand tracker_template("tracker_template","Template for the message sent before the tracker message",bot.me.id);
+
 dpp::slashcommand shutdown("shutdown","Command used to shut the bot down ( requires aditional bot-specific permissions)",bot.me.id);
+
+dpp::slashcommand info("info","will give you information about",bot.me.id);
+info.add_option(
+dpp::command_option(dpp::co_string,"command","The command you want information about",true)
+.add_choice(dpp::command_option_choice("boa","boa"))
+.add_choice(dpp::command_option_choice("jorkle","jorkle"))
+.add_choice(dpp::command_option_choice("perm-sync","perm-sync"))
+.add_choice(dpp::command_option_choice("track/untrack","track"))
+.add_choice(dpp::command_option_choice("tracker_channel","tracker_channel"))
+.add_choice(dpp::command_option_choice("tracker_template","tracker_template"))
+.add_choice(dpp::command_option_choice("info","info"))
+);
+
+
 
 auto guildlist = co_await bot.co_current_user_get_guilds();
 std::unordered_map<dpp::snowflake, dpp::guild> guilds = std::get<std::unordered_map<dpp::snowflake, dpp::guild>>(guildlist.value);
@@ -398,6 +420,20 @@ event.reply(msg);
 std::this_thread::sleep_for(500ms);
 bot.shutdown();
 co_return;
+}
+
+
+
+if(command=="info"){
+std::string command_name = std::get<std::string>(event.get_parameter("command"));
+if(command_name=="boa") msg.set_content("Just a random command that says boa just like the song {} {} {} says {}, and the selected possibilities are 100 and 200 from the song, and 60 from the emoji from the dream that the guy had");
+if(command_name=="jorkle") msg.set_content("This command has two modes: self and server, and they're both a toggle to see if the Jorkle function will work.\n The \"Server\" option is for admins, to toggle ( or not ) in the server.\nThe \"Self\" option has the scope either server or global, and serves to toggle for you either in a server or in general");
+if(command_name=="perm-sync") msg.set_content("This command synchronizes the perms of every channel in a category with the perms of the category, weird that discord doesn't have a way to automatically do this. It can work for a single channel as well, but then you might as well use the feature discord already has for this");
+if(command_name=="track") msg.set_content("This is an admin command, it serves to add a user to a list of tracked people, which will have their messages copied and sent in a channel, to make sure that any weirdness they send doesn't get ignored just because the chat was too active at the time. /track adds the user, /untrack removes them");
+if(command_name=="tracker_channel") msg.set_content("This is an admin command, it serves to set the tracker channel on the server, which is where the bot will copypaste the messages from the tracked users");
+if(command_name=="tracker_template") {msg.set_content("This command sets the template for the messager sent before the tracker message. The template has a few things it replaces.\n1. 'usr', 'chnl', and 'msg' get converted to 'user', 'channel', and 'message', respectively.\n2.%message will link the message\n3. %message_id will give you the discord snowflake for the message\n4. %user will ping the user who sent it\n5. %user_id will give you the id of the user who sent it\n6. %user_name will give you the username of the user who sent it (not nickname, username) \n7. % user_(s/server)(_)(name/nickname) will give you the sever nickname of the user, defaulting to the global nickname if there isn't one\n8. %user_(g/global)(_)(name/nickname) will give the user's global nickname\n9. %channel will link you to the channel the message was sent on\n10. %channel_id will give you the id of the channel that the message was sent on\nIf the message has >= 4k characters on the end, or if the message is \"NoSend\"(decapitalization-irrelevant) it will not be sent. If it is empty, it will choose the normal template instead");msg.set_flags(dpp::m_ephemeral);};
+if(command_name=="info") msg.set_content("This command will give you the information about the other commands");
+//if(command_name=="") msg.set_content("");
 }
 
 

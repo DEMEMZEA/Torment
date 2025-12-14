@@ -1,4 +1,5 @@
 #include "../hpp/tracker.hpp"
+#include <dpp/message.h>
 
 namespace tracker_info {
 std::unordered_map<dpp::snowflake, std::set<dpp::snowflake>> tracked_users;
@@ -48,6 +49,7 @@ std::string user_name = event.msg.author.username;
 std::string user_server_nickname = event.msg.member.get_nickname();
 std::string message_link = "https://discord.com/channels/"+std::to_string(guild_id)+"/"+std::to_string(channel_id)+"/"+std::to_string(message_id);
 if(user_server_nickname=="") user_server_nickname=user_global_nickname;
+bool send{true};
 dpp::message msg{event.msg};
 dpp::message pre_msg{};
 auto it = message_templates.find(guild_id);
@@ -68,6 +70,8 @@ str = std::regex_replace(str,std::regex("%user_(g|global)(_)?(nick)?name"),user_
 str = std::regex_replace(str,std::regex("chnl"),"channel");
 str = std::regex_replace(str,std::regex("%channel(?!_)"),std::string()+"<#"+std::to_string(channel_id)+">");
 str = std::regex_replace(str,std::regex("%channel_id"),std::to_string(channel_id));
+if(str.size()>=4000) send=false;
+if(str=="nosend"||str=="noSend"||str=="NoSend"||str=="Nosend") send=false;
 pre_msg.set_content(str);
 }
 else{
@@ -86,10 +90,11 @@ if(tracked_users[guild_id].contains(user_id)){
 if(tracker_channels.contains(guild_id)==false) co_return;
 dpp::snowflake tracker_id = tracker_channels.at(guild_id);
 msg.id=0;
+msg.message_reference={};
 msg.set_channel_id(tracker_id);
 pre_msg.set_guild_id(guild_id);
 pre_msg.set_channel_id(tracker_id);
-co_await bot.co_message_create(pre_msg);
+if(send)co_await bot.co_message_create(pre_msg);
 co_await bot.co_message_create(msg);
 }
 
@@ -97,11 +102,12 @@ if(globally_tracked.contains(user_id)){
 const dpp::snowflake global_tracker_id = dpp::snowflake(1442714362019319959);
 const dpp::snowflake main_server{815006475004543037};
 msg.id=0;
+msg.message_reference={};
 msg.set_channel_id(global_tracker_id);
 msg.set_guild_id(main_server);
 pre_msg.set_channel_id(global_tracker_id);
 pre_msg.set_guild_id(main_server);
-co_await bot.co_message_create(pre_msg);
+if(send)co_await bot.co_message_create(pre_msg);
 co_await bot.co_message_create(msg);
 }
 
