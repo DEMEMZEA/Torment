@@ -1,13 +1,12 @@
 #include <bits/stdc++.h>
-#include <dpp/appcommand.h>
 #include <dpp/dpp.h>
-#include <dpp/message.h>
 #include "hpp/jorkle.hpp"
 #include "hpp/save.hpp"
 #include "hpp/tracker.hpp"
 using namespace std;
 
-const string token = "MTQxNjk0OTc2MjIyMTAxNTEzMg.Gq2Hox.iUDaT5D5oIO19vlXN09k2Brx1NO-zFvXXDpmNQ";
+ifstream tokenfile("token");
+string token = "";
 const std::unordered_map<dpp::snowflake,int> bot_superusers{
 {dpp::snowflake(480714970548404224),5},
 
@@ -27,7 +26,11 @@ void signalHandler(int signalNum) {
 }
 
 int main(){
-
+if(tokenfile.fail()){
+std::cout<<"Sorry, the file \"token\" could not be opened sucessfully.\nYou must create a file called \"token\" (not \"token.txt\" or something else, just token, with no filename extension) and put your bot's token there.\n";
+return 1;
+}
+tokenfile >> token;
 dpp::cluster bot(token, dpp::i_default_intents | dpp::i_message_content | dpp::i_guild_members);
 struct load_info{};
 signal(SIGINT, signalHandler);
